@@ -56,7 +56,7 @@ class CaptureThread(QThread):
                 arr_bgr = cv2.cvtColor(arr, cv2.COLOR_RGBA2BGR)
                 
                 self.captured.emit(arr_bgr)
-                time.sleep(5)
+                time.sleep(3)
             except Exception as e:
                 self.logger.error(f"캡처 중 오류 발생: {str(e)}")
             
@@ -213,10 +213,21 @@ class MainWindow(QMainWindow):
 
     def processImage(self, captured_image):
         try:
-            result = cv2.matchTemplate(captured_image, self.target_image, cv2.TM_CCOEFF_NORMED)
+            
+            # result = cv2.matchTemplate(captured_image, self.target_image, cv2.TM_CCOEFF_NORMED)
+            # min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+
+            # 두 이미지를 그레이스케일로 변환
+            captured_gray = cv2.cvtColor(captured_image, cv2.COLOR_BGR2GRAY)
+            target_gray = cv2.cvtColor(self.target_image, cv2.COLOR_BGR2GRAY)
+            
+            # 그레이스케일 이미지로 템플릿 매칭 수행
+            result = cv2.matchTemplate(captured_gray, target_gray, cv2.TM_CCOEFF_NORMED)
             min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
             
-            if max_val > 0.8:
+            self.logger.info(max_val)
+
+            if max_val > 0.85:
                 self.logger.info(f"이미지 매칭 성공 (유사도: {max_val:.2f})")
                 self.sendTelegramMessage()
                 self.stopCapture()
